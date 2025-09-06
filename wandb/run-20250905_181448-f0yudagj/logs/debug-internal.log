@@ -1,9 +1,0 @@
-{"time":"2025-09-05T18:14:50.6537567+02:00","level":"INFO","msg":"stream: starting","core version":"0.21.3"}
-{"time":"2025-09-05T18:14:51.1404101+02:00","level":"INFO","msg":"stream: created new stream","id":"f0yudagj"}
-{"time":"2025-09-05T18:14:51.140932+02:00","level":"INFO","msg":"stream: started","id":"f0yudagj"}
-{"time":"2025-09-05T18:14:51.1415096+02:00","level":"INFO","msg":"handler: started","stream_id":"f0yudagj"}
-{"time":"2025-09-05T18:14:51.1415096+02:00","level":"INFO","msg":"writer: started","stream_id":"f0yudagj"}
-{"time":"2025-09-05T18:14:51.1415096+02:00","level":"INFO","msg":"sender: started","stream_id":"f0yudagj"}
-{"time":"2025-09-05T18:23:42.6309517+02:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/graphql\": read tcp 10.8.12.24:61997->35.186.228.49:443: wsarecv: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond."}
-{"time":"2025-09-05T18:28:42.8041104+02:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/graphql\": read tcp 10.8.12.24:62461->35.186.228.49:443: wsarecv: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond."}
-{"time":"2025-09-05T18:28:43.2753256+02:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/pablo-giaccaglia/Tesi-final/f0yudagj/file_stream\": dial tcp 35.186.228.49:443: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond."}
