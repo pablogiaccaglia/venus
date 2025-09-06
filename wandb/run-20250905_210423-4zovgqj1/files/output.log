@@ -1,0 +1,58 @@
+c:\Users\pabli\AppData\Local\pypoetry\Cache\virtualenvs\venus-nCPuPPcI-py3.9\lib\site-packages\lightning\pytorch\callbacks\model_checkpoint.py:701: Checkpoint directory C:\Users\pabli\Desktop\venus\checkpoints exists and is not empty.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name  | Type     | Params | Mode
+-------------------------------------------
+0 | model | FcnnFnet | 17.3 M | train
+-------------------------------------------
+17.3 M    Trainable params
+0         Non-trainable params
+17.3 M    Total params
+69.049    Total estimated model params size (MB)
+103       Modules in train mode
+0         Modules in eval mode
+c:\Users\pabli\AppData\Local\pypoetry\Cache\virtualenvs\venus-nCPuPPcI-py3.9\lib\site-packages\lightning\pytorch\trainer\connectors\data_connector.py:433: The 'val_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=23` in the `DataLoader` to improve performance.
+c:\Users\pabli\Desktop\venus\breast_segmentation\metrics\evaluation.py:386: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  dice_score = torch.tensor(compute_dice_score_single(y_true_flat, y_pred_flat, class_id, exclude_empty)).float()
+c:\Users\pabli\AppData\Local\pypoetry\Cache\virtualenvs\venus-nCPuPPcI-py3.9\lib\site-packages\lightning\pytorch\trainer\connectors\data_connector.py:433: The 'train_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=23` in the `DataLoader` to improve performance.
+c:\Users\pabli\AppData\Local\pypoetry\Cache\virtualenvs\venus-nCPuPPcI-py3.9\lib\site-packages\lightning\pytorch\loops\fit_loop.py:310: The number of training batches (6) is smaller than the logging interval Trainer(log_every_n_steps=10). Set a lower value for log_every_n_steps if you want to see logs for the training epoch.
+
+Detected KeyboardInterrupt, attempting graceful shutdown ...
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+c:\Users\pabli\AppData\Local\pypoetry\Cache\virtualenvs\venus-nCPuPPcI-py3.9\lib\site-packages\lightning\pytorch\trainer\connectors\data_connector.py:433: The 'test_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=23` in the `DataLoader` to improve performance.
+{   'test_acc_per_dataset_background': 0.0,
+    'test_acc_per_dataset_mass': 2.3241394956130534e-05,
+    'test_acc_per_image_background': 0.0,
+    'test_acc_per_image_mass': 2.3241396775119938e-05,
+    'test_accuracy': 2.3679915102547966e-05,
+    'test_dice_per_dataset_background': 0.0,
+    'test_dice_per_dataset_background_no_empty': 0.0,
+    'test_dice_per_dataset_mass': 4.647306923288852e-05,
+    'test_dice_per_dataset_mass_no_empty': 4.647306923288852e-05,
+    'test_dice_per_image_background': 0.0,
+    'test_dice_per_image_background_no_empty': 0.0,
+    'test_dice_per_image_mass': 4.640757470042445e-05,
+    'test_dice_per_image_mass_no_empty': 4.640757470042445e-05,
+    'test_iou_per_dataset_background': 0.0,
+    'test_iou_per_dataset_background_no_empty': 0.0,
+    'test_iou_per_dataset_mass': 2.3241394956130534e-05,
+    'test_iou_per_dataset_mass_no_empty': 2.3241394956130534e-05,
+    'test_iou_per_image_background': 0.0,
+    'test_iou_per_image_background_no_empty': 0.0,
+    'test_iou_per_image_mass': 2.3241396775119938e-05,
+    'test_iou_per_image_mass_no_empty': 2.3241396775119938e-05,
+    'test_loss': 1.2145053148269653,
+    'test_mean_dice_per_dataset': 2.3641594452783465e-05,
+    'test_mean_dice_per_dataset_no_empty': 2.3641594452783465e-05,
+    'test_mean_dice_per_image': 2.3641594452783465e-05,
+    'test_mean_dice_per_image_no_empty': 2.3641594452783465e-05,
+    'test_mean_iou_per_dataset': 1.1839957551273983e-05,
+    'test_mean_iou_per_dataset_no_empty': 1.1839957551273983e-05,
+    'test_mean_iou_per_image': 1.1839957551273983e-05,
+    'test_mean_iou_per_image_no_empty': 1.1839957551273983e-05,
+    'test_per_dataset_dice': 4.7358702431665733e-05,
+    'test_per_dataset_iou': 2.3679915102547966e-05,
+    'test_per_image_dice': 4.728318890556693e-05,
+    'test_per_image_iou': 2.3679915102547966e-05,
+    'test_precision': 0.5000118613243103,
+    'test_recall': 0.5}

@@ -1,0 +1,24 @@
+2025-09-03 14:27:52,262 INFO    MainThread:26804 [wandb_setup.py:_flush():81] Current SDK version is 0.21.3
+2025-09-03 14:27:52,262 INFO    MainThread:26804 [wandb_setup.py:_flush():81] Configure stats pid to 26804
+2025-09-03 14:27:52,262 INFO    MainThread:26804 [wandb_setup.py:_flush():81] Loading settings from C:\Users\pabli\.config\wandb\settings
+2025-09-03 14:27:52,262 INFO    MainThread:26804 [wandb_setup.py:_flush():81] Loading settings from c:\Users\pabli\Desktop\venus\wandb\settings
+2025-09-03 14:27:52,262 INFO    MainThread:26804 [wandb_setup.py:_flush():81] Loading settings from environment variables
+2025-09-03 14:27:52,262 INFO    MainThread:26804 [wandb_init.py:setup_run_log_directory():686] Logging user logs to .\wandb\run-20250903_142752-r8gzmq2q\logs\debug.log
+2025-09-03 14:27:52,270 INFO    MainThread:26804 [wandb_init.py:setup_run_log_directory():687] Logging internal logs to .\wandb\run-20250903_142752-r8gzmq2q\logs\debug-internal.log
+2025-09-03 14:27:52,270 INFO    MainThread:26804 [wandb_init.py:monkeypatch_ipython():605] configuring jupyter hooks <wandb.sdk.wandb_init._WandbInit object at 0x000001C2745FF460>
+2025-09-03 14:27:52,271 INFO    MainThread:26804 [wandb_init.py:init():813] calling init triggers
+2025-09-03 14:27:52,271 INFO    MainThread:26804 [wandb_init.py:init():818] wandb.init called with sweep_config: {}
+config: {'_wandb': {}}
+2025-09-03 14:27:52,271 INFO    MainThread:26804 [wandb_init.py:init():854] starting backend
+2025-09-03 14:27:54,528 INFO    MainThread:26804 [wandb_init.py:init():857] sending inform_init request
+2025-09-03 14:27:54,539 INFO    MainThread:26804 [wandb_init.py:init():865] backend started and connected
+2025-09-03 14:27:54,543 INFO    MainThread:26804 [wandb_run.py:_label_probe_notebook():1318] probe notebook
+2025-09-03 14:27:54,544 INFO    MainThread:26804 [wandb_init.py:init():936] updated telemetry
+2025-09-03 14:27:54,546 INFO    MainThread:26804 [wandb_init.py:init():960] communicating run to backend with 90.0 second timeout
+2025-09-03 14:27:55,524 INFO    MainThread:26804 [wandb_init.py:init():1011] starting run threads in backend
+2025-09-03 14:27:55,679 INFO    MainThread:26804 [wandb_run.py:_console_start():2494] atexit reg
+2025-09-03 14:27:55,679 INFO    MainThread:26804 [wandb_run.py:_redirect():2342] redirect: wrap_raw
+2025-09-03 14:27:55,679 INFO    MainThread:26804 [wandb_run.py:_redirect():2411] Wrapping output streams.
+2025-09-03 14:27:55,679 INFO    MainThread:26804 [wandb_run.py:_redirect():2434] Redirects installed.
+2025-09-03 14:27:55,681 INFO    MainThread:26804 [wandb_init.py:init():1057] run started, returning control to user process
+2025-09-03 14:27:55,765 INFO    MainThread:26804 [wandb_run.py:_config_callback():1380] config_cb None None {'arch': 'venus', 'encoder_name': None, 'in_channels': 1, 'out_classes': 1, 'batch_size': 16, 'len_train_loader': 75, 'learning_rate': 0.0001, 'threshold': 0.4, 'base_channels': 64, 'loss_function': 'cabfl', 'loss_kwargs': {'idc': [1], 'weight_aufl': 0.5, 'delta': 0.4, 'gamma': 0.1}, 'use_boundary_loss': True, 'use_decoder_attention': True, 'use_simple_fusion': False, 'img_size': 256, 'augment_inference': False}

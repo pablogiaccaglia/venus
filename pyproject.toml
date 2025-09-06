@@ -1,0 +1,56 @@
+[project]
+name = "venus"
+version = "0.1.0"
+description = "Medical image segmentation project with boundary loss implementation"
+authors = [{name = "Your Name", email = "your.email@example.com"}]
+readme = "README.md"
+requires-python = ">=3.9"
+
+[tool.poetry]
+packages = [{include = "boundaryloss"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+numpy = "*"
+monai = "*"
+matplotlib = "*"
+scikit-image = "*"
+scikit-learn = "*"
+segmentation-models-pytorch = "*"
+nibabel = "*"
+natsort = "*"
+tqdm = "*"
+pillow = "*"
+scipy = "*"
+gdown = "^5.2.0"
+unzip = "^1.0.0"
+monai-weekly = {extras = ["einops", "gdown", "ignite", "nibabel", "tqdm"], version = "^1.6.dev2535"}
+einops = "^0.8.1"
+einsum = "^0.3.0"
+opencv-python-headless = "^4.12.0.88"
+albumentations = "^2.0.8"
+lightning = "^2.5.4"
+wandb = "^0.21.3"
+medpy = "^0.5.2"
+torch = {version = "^2.5.1", source = "pytorch-cu121"}
+torchvision = {version = "^0.20.1", source = "pytorch-cu121"}
+
+[[tool.poetry.source]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+priority = "explicit"
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "*"
+ipykernel = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+
+[tool.poetry.scripts]
+# Add any scripts you might need here
