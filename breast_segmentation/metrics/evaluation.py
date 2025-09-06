@@ -207,13 +207,15 @@ def compute_iou_imagewise_from_cumulator(
         fn = FNs
         tn = TNs
     
-    iou_scores = compute_iou_from_metrics(tp, fp, tn, fn, reduction='none', exclude_empty=exclude_empty)
-    
+
     if return_std:
-        import numpy as np
-        return torch.nanmean(iou_scores).item(), np.nanstd(iou_scores.cpu().numpy())
+
+        mean_iou, std_iou = compute_iou_from_metrics(tp, fp, tn, fn, reduction='micro-imagewise',exclude_empty=exclude_empty, exclude_empty_only_gt =exclude_empty_only_gt, return_std=return_std)
+        return mean_iou.item(), std_iou.item()
+
     else:
-        return torch.nanmean(iou_scores).item()
+
+        return compute_iou_from_metrics(tp, fp, tn, fn, reduction='micro-imagewise',exclude_empty=exclude_empty).item()
 
 
 def compute_dice_imagewise_from_cumulator(
@@ -238,13 +240,14 @@ def compute_dice_imagewise_from_cumulator(
         fn = FNs
         tn = TNs
     
-    dice_scores = compute_dice_from_metrics(tp, fp, tn, fn, reduction='none', exclude_empty=exclude_empty)
     
     if return_std:
-        import numpy as np
-        return torch.nanmean(dice_scores).item(), np.nanstd(dice_scores.cpu().numpy())
+        mean_dice, std_dice =  compute_dice_from_metrics(tp, fp, tn, fn, reduction='micro-imagewise',exclude_empty=exclude_empty, exclude_empty_only_gt=exclude_empty_only_gt, return_std=return_std)
+        return mean_dice.item(), std_dice.item()
+
     else:
-        return torch.nanmean(dice_scores).item()
+
+        return compute_dice_from_metrics(tp, fp, tn, fn, reduction='micro-imagewise',exclude_empty=exclude_empty).item()
 
 
 def compute_mean_iou_imagewise_from_cumulator(
