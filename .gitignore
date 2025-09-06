@@ -3,6 +3,7 @@ checkpoints/
 BreaDM/
 Dataset-arrays-4-FINAL/
 Dataset-arrays-FINAL/
+lightning_logs/
 
 # Specific  files
 training_monai-bradm (2) (1) (1) (1) (1).ipynb
