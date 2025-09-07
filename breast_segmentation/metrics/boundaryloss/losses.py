@@ -10,7 +10,7 @@ from boundaryloss.utils import simplex, probs2one_hot, one_hot
 from boundaryloss.utils import one_hot2hd_dist
 
 
-class CrossEntropy():
+class CrossEntropy:
     def __init__(self, **kwargs):
         # Self.idc is used to filter out some classes of the target mask. Use fancy indexing
         self.idc: List[int] = kwargs["idc"]
@@ -22,13 +22,13 @@ class CrossEntropy():
         log_p: Tensor = (probs[:, self.idc, ...] + 1e-10).log()
         mask: Tensor = cast(Tensor, target[:, self.idc, ...].type(torch.float32))
 
-        loss = - einsum("bkwh,bkwh->", mask, log_p)
+        loss = -einsum("bkwh,bkwh->", mask, log_p)
         loss /= mask.sum() + 1e-10
 
         return loss
 
 
-class GeneralizedDice():
+class GeneralizedDice:
     def __init__(self, **kwargs):
         # Self.idc is used to filter out some classes of the target mask. Use fancy indexing
         self.idc: List[int] = kwargs["idc"]
@@ -44,14 +44,16 @@ class GeneralizedDice():
         intersection: Tensor = w * einsum("bkwh,bkwh->bk", pc, tc)
         union: Tensor = w * (einsum("bkwh->bk", pc) + einsum("bkwh->bk", tc))
 
-        divided: Tensor = 1 - 2 * (einsum("bk->b", intersection) + 1e-10) / (einsum("bk->b", union) + 1e-10)
+        divided: Tensor = 1 - 2 * (einsum("bk->b", intersection) + 1e-10) / (
+            einsum("bk->b", union) + 1e-10
+        )
 
         loss = divided.mean()
 
         return loss
 
 
-class DiceLoss():
+class DiceLoss:
     def __init__(self, **kwargs):
         # Self.idc is used to filter out some classes of the target mask. Use fancy indexing
         self.idc: List[int] = kwargs["idc"]
@@ -64,16 +66,18 @@ class DiceLoss():
         tc = target[:, self.idc, ...].type(torch.float32)
 
         intersection: Tensor = einsum("bcwh,bcwh->bc", pc, tc)
-        union: Tensor = (einsum("bkwh->bk", pc) + einsum("bkwh->bk", tc))
+        union: Tensor = einsum("bkwh->bk", pc) + einsum("bkwh->bk", tc)
 
-        divided: Tensor = torch.ones_like(intersection) - (2 * intersection + 1e-10) / (union + 1e-10)
+        divided: Tensor = torch.ones_like(intersection) - (2 * intersection + 1e-10) / (
+            union + 1e-10
+        )
 
         loss = divided.mean()
 
         return loss
 
 
-class SurfaceLoss():
+class SurfaceLoss:
     def __init__(self, **kwargs):
         # Self.idc is used to filter out some classes of the target mask. Use fancy indexing
         self.idc: List[int] = kwargs["idc"]
@@ -96,10 +100,11 @@ class SurfaceLoss():
 BoundaryLoss = SurfaceLoss
 
 
-class HausdorffLoss():
+class HausdorffLoss:
     """
     Implementation heavily inspired from https://github.com/JunMa11/SegWithDistMap
     """
+
     def __init__(self, **kwargs):
         # Self.idc is used to filter out some classes of the target mask. Use fancy indexing
         self.idc: List[int] = kwargs["idc"]
@@ -116,18 +121,20 @@ class HausdorffLoss():
         tc = cast(Tensor, target[:, self.idc, ...].type(torch.float32))
         assert pc.shape == tc.shape == (B, len(self.idc), *xyz)
 
-        target_dm_npy: np.ndarray = np.stack([one_hot2hd_dist(tc[b].cpu().detach().numpy())
-                                              for b in range(B)], axis=0)
+        target_dm_npy: np.ndarray = np.stack(
+            [one_hot2hd_dist(tc[b].cpu().detach().numpy()) for b in range(B)], axis=0
+        )
         assert target_dm_npy.shape == tc.shape == pc.shape
         tdm: Tensor = torch.tensor(target_dm_npy, device=probs.device, dtype=torch.float32)
 
         pred_segmentation: Tensor = probs2one_hot(probs).cpu().detach()
-        pred_dm_npy: np.nparray = np.stack([one_hot2hd_dist(pred_segmentation[b, self.idc, ...].numpy())
-                                            for b in range(B)], axis=0)
+        pred_dm_npy: np.nparray = np.stack(
+            [one_hot2hd_dist(pred_segmentation[b, self.idc, ...].numpy()) for b in range(B)], axis=0
+        )
         assert pred_dm_npy.shape == tc.shape == pc.shape
         pdm: Tensor = torch.tensor(pred_dm_npy, device=probs.device, dtype=torch.float32)
 
-        delta = (pc - tc)**2
+        delta = (pc - tc) ** 2
         dtm = tdm**2 + pdm**2
 
         multipled = einsum("bkwh,bkwh->bkwh", delta, dtm)
@@ -137,7 +144,7 @@ class HausdorffLoss():
         return loss
 
 
-class FocalLoss():
+class FocalLoss:
     def __init__(self, **kwargs):
         # Self.idc is used to filter out some classes of the target mask. Use fancy indexing
         self.idc: List[int] = kwargs["idc"]
@@ -151,8 +158,8 @@ class FocalLoss():
         log_p: Tensor = (masked_probs + 1e-10).log()
         mask: Tensor = cast(Tensor, target[:, self.idc, ...].type(torch.float32))
 
-        w: Tensor = (1 - masked_probs)**self.gamma
-        loss = - einsum("bkwh,bkwh,bkwh->", w, mask, log_p)
+        w: Tensor = (1 - masked_probs) ** self.gamma
+        loss = -einsum("bkwh,bkwh,bkwh->", w, mask, log_p)
         loss /= mask.sum() + 1e-10
 
         return loss

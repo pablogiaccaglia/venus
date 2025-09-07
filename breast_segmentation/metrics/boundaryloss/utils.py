@@ -21,13 +21,34 @@ from medpy.metric.binary import hd
 from scipy.ndimage import distance_transform_edt as eucl_distance
 
 
-colors = ["c", "r", "g", "b", "m", 'y', 'k', 'chartreuse', 'coral', 'gold', 'lavender',
-          'silver', 'tan', 'teal', 'wheat', 'orchid', 'orange', 'tomato']
+colors = [
+    "c",
+    "r",
+    "g",
+    "b",
+    "m",
+    "y",
+    "k",
+    "chartreuse",
+    "coral",
+    "gold",
+    "lavender",
+    "silver",
+    "tan",
+    "teal",
+    "wheat",
+    "orchid",
+    "orange",
+    "tomato",
+]
 
 # functions redefinitions
-tqdm_ = partial(tqdm, dynamic_ncols=True,
-                leave=False,
-                bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [' '{rate_fmt}{postfix}]')
+tqdm_ = partial(
+    tqdm,
+    dynamic_ncols=True,
+    leave=False,
+    bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [" "{rate_fmt}{postfix}]",
+)
 
 A = TypeVar("A")
 B = TypeVar("B")
@@ -35,12 +56,12 @@ T = TypeVar("T", Tensor, np.ndarray)
 
 
 def str2bool(v):
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+    if v.lower() in ("yes", "true", "t", "y", "1"):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    elif v.lower() in ("no", "false", "f", "n", "0"):
         return False
     else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+        raise argparse.ArgumentTypeError("Boolean value expected.")
 
 
 def map_(fn: Callable[[A], B], iter: Iterable[A]) -> List[B]:
@@ -196,14 +217,18 @@ def hausdorff(preds: Tensor, target: Tensor, spacing: Tensor = None) -> Tensor:
         for k in range(K):
             if not n_target[b, k].any():  # No object to predict
                 if n_pred[b, k].any():  # Predicted something nonetheless
-                    res[b, k] = sum((dd * d)**2 for (dd, d) in zip(n_spacing[b], img_shape)) ** 0.5
+                    res[b, k] = (
+                        sum((dd * d) ** 2 for (dd, d) in zip(n_spacing[b], img_shape)) ** 0.5
+                    )
                     continue
                 else:
                     res[b, k] = 0
                     continue
             if not n_pred[b, k].any():
                 if n_target[b, k].any():
-                    res[b, k] = sum((dd * d)**2 for (dd, d) in zip(n_spacing[b], img_shape)) ** 0.5
+                    res[b, k] = (
+                        sum((dd * d) ** 2 for (dd, d) in zip(n_spacing[b], img_shape)) ** 0.5
+                    )
                     continue
                 else:
                     res[b, k] = 0
@@ -235,7 +260,9 @@ def class2one_hot(seg: Tensor, K: int) -> Tensor:
     b, *img_shape = seg.shape  # type: Tuple[int, ...]
 
     device = seg.device
-    res = torch.zeros((b, K, *img_shape), dtype=torch.int32, device=device).scatter_(1, seg[:, None, ...], 1)
+    res = torch.zeros((b, K, *img_shape), dtype=torch.int32, device=device).scatter_(
+        1, seg[:, None, ...], 1
+    )
 
     assert res.shape == (b, K, *img_shape)
     assert one_hot(res)
@@ -244,19 +271,19 @@ def class2one_hot(seg: Tensor, K: int) -> Tensor:
 
 
 def np_class2one_hot(seg: np.ndarray, K: int) -> np.ndarray:
-        # print("Np enters")
-        """
-        Seems to be blocking here when using multi-processing.
-        Don't know why, so for now I'll re-implement the same function in numpy
-        which should be faster anyhow, but can introduce inconsistencies in the code
-        so need to be careful.
-        """
-        b, w, h = seg.shape
-        res = np.zeros((b, K, w, h), dtype=np.int64)
-        np.put_along_axis(res, seg[:, None, :, :], 1, axis=1)
+    # print("Np enters")
+    """
+    Seems to be blocking here when using multi-processing.
+    Don't know why, so for now I'll re-implement the same function in numpy
+    which should be faster anyhow, but can introduce inconsistencies in the code
+    so need to be careful.
+    """
+    b, w, h = seg.shape
+    res = np.zeros((b, K, w, h), dtype=np.int64)
+    np.put_along_axis(res, seg[:, None, :, :], 1, axis=1)
 
-        return res
-        # return class2one_hot(torch.from_numpy(seg.copy()).type(torch.int64), K).numpy()
+    return res
+    # return class2one_hot(torch.from_numpy(seg.copy()).type(torch.int64), K).numpy()
 
 
 def probs2one_hot(probs: Tensor) -> Tensor:
@@ -270,8 +297,9 @@ def probs2one_hot(probs: Tensor) -> Tensor:
     return res
 
 
-def one_hot2dist(seg: np.ndarray, resolution: Tuple[float, float, float] = None,
-                 dtype=None) -> np.ndarray:
+def one_hot2dist(
+    seg: np.ndarray, resolution: Tuple[float, float, float] = None, dtype=None
+) -> np.ndarray:
     assert one_hot(torch.tensor(seg), axis=0)
     K: int = len(seg)
 
@@ -281,16 +309,19 @@ def one_hot2dist(seg: np.ndarray, resolution: Tuple[float, float, float] = None,
 
         if posmask.any():
             negmask = ~posmask
-            res[k] = eucl_distance(negmask, sampling=resolution) * negmask \
+            res[k] = (
+                eucl_distance(negmask, sampling=resolution) * negmask
                 - (eucl_distance(posmask, sampling=resolution) - 1) * posmask
+            )
         # The idea is to leave blank the negative classes
         # since this is one-hot encoded, another class will supervise that pixel
 
     return res
 
 
-def one_hot2hd_dist(seg: np.ndarray, resolution: Tuple[float, float, float] = None,
-                    dtype=None) -> np.ndarray:
+def one_hot2hd_dist(
+    seg: np.ndarray, resolution: Tuple[float, float, float] = None, dtype=None
+) -> np.ndarray:
     """
     Used for https://arxiv.org/pdf/1904.10030.pdf,
     implementation from https://github.com/JunMa11/SegWithDistMap
@@ -324,10 +355,17 @@ def save_images(segs: Tensor, names: Iterable[str], root: str, mode: str, iter: 
             raise ValueError("How did you get here")
 
 
-def augment(*arrs: Union[np.ndarray, Image.Image], rotate_angle: float = 45,
-            flip: bool = True, mirror: bool = True,
-            rotate: bool = True, scale: bool = False) -> List[Image.Image]:
-    imgs: List[Image.Image] = map_(Image.fromarray, arrs) if isinstance(arrs[0], np.ndarray) else list(arrs)
+def augment(
+    *arrs: Union[np.ndarray, Image.Image],
+    rotate_angle: float = 45,
+    flip: bool = True,
+    mirror: bool = True,
+    rotate: bool = True,
+    scale: bool = False,
+) -> List[Image.Image]:
+    imgs: List[Image.Image] = (
+        map_(Image.fromarray, arrs) if isinstance(arrs[0], np.ndarray) else list(arrs)
+    )
 
     if flip and random() > 0.5:
         imgs = map_(ImageOps.flip, imgs)
@@ -353,10 +391,17 @@ def augment(*arrs: Union[np.ndarray, Image.Image], rotate_angle: float = 45,
     return imgs
 
 
-def augment_arr(*arrs_a: np.ndarray, rotate_angle: float = 45,
-                flip: bool = True, mirror: bool = True,
-                rotate: bool = True, scale: bool = False,
-                noise: bool = False, noise_loc: float = 0.5, noise_lambda: float = 0.1) -> List[np.ndarray]:
+def augment_arr(
+    *arrs_a: np.ndarray,
+    rotate_angle: float = 45,
+    flip: bool = True,
+    mirror: bool = True,
+    rotate: bool = True,
+    scale: bool = False,
+    noise: bool = False,
+    noise_loc: float = 0.5,
+    noise_lambda: float = 0.1,
+) -> List[np.ndarray]:
     arrs = list(arrs_a)  # manoucherie type check
 
     if flip and random() > 0.5:
@@ -379,7 +424,8 @@ def augment_arr(*arrs_a: np.ndarray, rotate_angle: float = 45,
 
 
 def get_center(shape: Tuple, *arrs: np.ndarray) -> List[np.ndarray]:
-    """ center cropping """
+    """center cropping"""
+
     def g_center(arr):
         if arr.shape == shape:
             return arr
@@ -389,7 +435,9 @@ def get_center(shape: Tuple, *arrs: np.ndarray) -> List[np.ndarray]:
         if 0 in offsets:
             return arr[[slice(0, s) for s in shape]]
 
-        res = arr[[slice(d, -d) for d in offsets]][[slice(0, s) for s in shape]]  # Deal with off-by-one errors
+        res = arr[[slice(d, -d) for d in offsets]][
+            [slice(0, s) for s in shape]
+        ]  # Deal with off-by-one errors
         assert res.shape == shape, (res.shape, shape, offsets)
 
         return res

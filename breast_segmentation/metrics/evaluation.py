@@ -7,22 +7,18 @@ from monai.metrics import DiceMetric
 
 
 def compute_metrics_from_confusion_matrix(
-    tp: torch.Tensor, 
-    fp: torch.Tensor, 
-    tn: torch.Tensor, 
-    fn: torch.Tensor,
-    eps: float = 1e-7
+    tp: torch.Tensor, fp: torch.Tensor, tn: torch.Tensor, fn: torch.Tensor, eps: float = 1e-7
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Compute precision, recall, F1 score, and accuracy from confusion matrix components.
-    
+
     Args:
         tp: True positives
         fp: False positives
         tn: True negatives
         fn: False negatives
         eps: Small epsilon to avoid division by zero
-    
+
     Returns:
         Tuple of (precision, recall, f1_score, accuracy)
     """
@@ -30,63 +26,140 @@ def compute_metrics_from_confusion_matrix(
     recall = tp / (tp + fn + eps)
     f1_score = 2 * (precision * recall) / (precision + recall + eps)
     accuracy = (tp + tn) / (tp + tn + fp + fn + eps)
-    
+
     return precision, recall, f1_score, accuracy
 
 
-def compute_iou_from_metrics(tp, fp, tn, fn, reduction='micro', exclude_empty=False):
+def compute_iou_from_metrics(
+    tp,
+    fp,
+    tn,
+    fn,
+    reduction="micro",
+    exclude_empty=False,
+    exclude_empty_only_gt=False,
+    return_std=False,
+):
     denominator = tp + fp + fn
     with torch.no_grad():  # Avoid tracking these operations in the autograd graph
-        if reduction == 'micro':
+        if reduction == "micro":
             # Sum the counts across all samples and compute IoU
-            iou = tp.sum() / (denominator.sum())
-        elif reduction == 'micro-imagewise':
-            # Compute IoU per sample, then average across samples
+            iou = tp.sum() / denominator.sum()
+            if return_std:
+                # Standard deviation does not apply in micro mode because it is a single value
+                return iou, torch.tensor(0.0)
+            return iou
+
+        elif reduction == "micro-imagewise":
+            # Avoid division by zero; set IoU to NaN for samples with denominator == 0
             valid = denominator != 0
-            iou_per_sample = torch.zeros_like(tp, dtype=torch.float32)
-            iou_per_sample[valid] = tp[valid].float() / denominator[valid].float()
-            
+            iou_per_sample = torch.zeros_like(tp, dtype=torch.float)
+            iou_per_sample[valid] = tp[valid] / denominator[valid]
             if exclude_empty:
-                iou_per_sample[~valid] = torch.tensor(float('nan'))
-                iou = torch.nanmean(iou_per_sample)
+                if exclude_empty_only_gt:
+                    # Exclude samples with no positives in the ground truth
+                    exclude_mask = (tp + fn) == 0
+                    iou_per_sample = torch.where(
+                        exclude_mask, torch.tensor(float("nan")), iou_per_sample
+                    )
+
+                # Compute mean and optionally standard deviation only for valid samples
+                mean_iou = torch.nanmean(iou_per_sample[valid])
+                if return_std:
+                    std_iou = np.nanstd(iou_per_sample[valid])
+                    return mean_iou, std_iou
+                return mean_iou
             else:
-                iou_per_sample[~valid] = torch.tensor(1.0)
-                iou = torch.mean(iou_per_sample)
-        elif reduction == 'none':
-            # Return IoU for each sample without averaging
+                iou_per_sample[~valid] = torch.tensor(1.0)  # Set invalid samples to 1
+                mean_iou = torch.mean(iou_per_sample)
+                if return_std:
+                    std_iou = torch.std(iou_per_sample)
+                    return mean_iou, std_iou
+                return mean_iou
+
+        elif reduction == "none":
+            # Compute IoU for each sample, handling division by zero
+            iou = torch.zeros_like(tp, dtype=torch.float)
             valid = denominator != 0
-            iou = torch.zeros_like(tp, dtype=torch.float32)
-            iou[valid] = tp[valid].float() / denominator[valid].float()
+            iou[valid] = tp[valid] / denominator[valid]
             if exclude_empty:
-                iou[~valid] = torch.tensor(float('nan'))
+                iou[~valid] = torch.tensor(float("nan"))  # Mark invalid samples as NaN
+                if exclude_empty_only_gt:
+                    # Exclude samples with no positives in the ground truth
+                    exclude_mask = (tp + fn) == 0
+                    iou = torch.where(exclude_mask, torch.tensor(float("nan")), iou)
             else:
-                iou[~valid] = torch.tensor(1.0)
+                iou[~valid] = torch.tensor(
+                    1.0
+                )  # Optionally: Set a default value for invalid samples if not excluding them
+            return iou  # Standard deviation is not applicable for 'none' reduction
+
         else:
-            raise ValueError("Reduction method must be either 'micro', 'micro-imagewise', or 'none'.")
+            raise ValueError(
+                "Reduction method must be either 'micro', 'micro-imagewise', or 'none'."
+            )
 
-    return iou
+    return iou  # Return IoU, handle std outside this condition if needed
 
 
-def compute_dice_from_metrics(tp, fp, tn, fn, reduction='micro', exclude_empty=False):
+def compute_dice_from_metrics(
+    tp,
+    fp,
+    tn,
+    fn,
+    reduction="micro",
+    exclude_empty=False,
+    exclude_empty_only_gt=False,
+    return_std=False,
+):
     dice_denominator = 2 * tp + fp + fn
     dice_numerator = 2 * tp
 
-    if reduction == 'micro':
+    if reduction == "micro":
         dice_score = dice_numerator.sum() / dice_denominator.sum()
-    elif reduction == 'micro-imagewise':
+        if return_std:
+            # Standard deviation does not apply in micro mode because it is a single value
+            return dice_score, torch.tensor(0.0)
+        return dice_score
+
+    elif reduction == "micro-imagewise":
         dice_per_sample = dice_numerator / dice_denominator
         if exclude_empty:
-            dice_per_sample = torch.where(dice_denominator == 0, torch.tensor(float('nan')), dice_per_sample)
-            dice_score = torch.nanmean(dice_per_sample)
+            dice_per_sample = torch.where(
+                dice_denominator == 0, torch.tensor(float("nan")), dice_per_sample
+            )
+            if exclude_empty_only_gt:
+                # Exclude samples where there are no positives in the ground truth
+                exclude_mask = (tp + fn) == 0  # Ground truth empty cases
+                dice_per_sample = torch.where(
+                    exclude_mask, torch.tensor(float("nan")), dice_per_sample
+                )
+
+            mean_dice = torch.nanmean(dice_per_sample)
+            if return_std:
+                std_dice = np.nanstd(dice_per_sample)
+                return mean_dice, std_dice
+            return mean_dice
         else:
             dice_per_sample = torch.where(dice_denominator == 0, 1, dice_per_sample)
-            dice_score = torch.nanmean(dice_per_sample)
-    elif reduction == 'none':
+            mean_dice = torch.nanmean(dice_per_sample)
+            if return_std:
+                std_dice = np.nanstd(dice_per_sample)
+                return mean_dice, std_dice
+            return mean_dice
+
+    elif reduction == "none":
         dice_score = dice_numerator / dice_denominator
         if exclude_empty:
-            dice_score = torch.where(dice_denominator == 0, torch.tensor(float('nan')), dice_score)
+            dice_score = torch.where(dice_denominator == 0, torch.tensor(float("nan")), dice_score)
+            if exclude_empty_only_gt:
+                # Exclude samples where there are no positives in the ground truth
+                exclude_mask = (tp + fn) == 0  # Ground truth empty cases
+                dice_score = torch.where(exclude_mask, torch.tensor(float("nan")), dice_score)
         else:
             dice_score = torch.where(dice_denominator == 0, 1, dice_score)
+        return dice_score  # Standard deviation is not applicable for 'none' reduction
+
     else:
         raise ValueError("Reduction method must be either 'micro', 'micro-imagewise', or 'none'.")
 
@@ -100,88 +173,85 @@ def compute_iou(
     y_true: torch.Tensor,
     y_pred: torch.Tensor,
     class_id: int = 1,
-    reduction: str = 'micro',
-    exclude_empty: bool = False
+    reduction: str = "micro",
+    exclude_empty: bool = False,
 ) -> float:
     """
     Compute Intersection over Union for a specific class.
-    
+
     Args:
         y_true: Ground truth tensor [B, H, W] or [B, C, H, W]
         y_pred: Prediction tensor [B, H, W] or [B, C, H, W]
         class_id: Class ID to compute IoU for
         reduction: Reduction method ('micro' or 'micro_image_wise')
         exclude_empty: Whether to exclude empty masks
-    
+
     Returns:
         IoU score
     """
+
     def compute_iou_single(y_true_single, y_pred_single, class_id_single, exclude_empty=False):
         y_true_class = (y_true_single == class_id_single).float()
         y_pred_class = (y_pred_single == class_id_single).float()
-        
+
         intersection = torch.logical_and(y_true_class, y_pred_class)
         union = torch.logical_or(y_true_class, y_pred_class)
-        
+
         union_sum = torch.sum(union)
         if union_sum == 0:
             # Both prediction and ground truth are empty
             if exclude_empty:
-                return torch.tensor(float('nan'))
+                return torch.tensor(float("nan"))
             else:
                 return torch.tensor(1.0)
         else:
             return torch.sum(intersection).float() / union_sum.float()
-    
-    if reduction == 'micro':
+
+    if reduction == "micro":
         y_true = y_true.view(-1)
         y_pred = y_pred.view(-1)
         return compute_iou_single(y_true, y_pred, class_id, exclude_empty).item()
-    
-    elif reduction == 'micro_image_wise':
-        iou_scores = torch.stack([
-            compute_iou_single(y, p, class_id, exclude_empty) 
-            for y, p in zip(y_true, y_pred)
-        ])
+
+    elif reduction == "micro_image_wise":
+        iou_scores = torch.stack(
+            [compute_iou_single(y, p, class_id, exclude_empty) for y, p in zip(y_true, y_pred)]
+        )
         if exclude_empty:
             # Filter out NaN values when excluding empty masks
             valid_scores = iou_scores[~torch.isnan(iou_scores)]
             if len(valid_scores) == 0:
-                return float('nan')
+                return float("nan")
             return torch.mean(valid_scores).item()
         else:
             return torch.mean(iou_scores).item()
-    
+
     else:
         raise ValueError(f"Unknown reduction method: {reduction}")
 
 
 def compute_dice(
-    y_true: torch.Tensor,
-    y_pred: torch.Tensor,
-    class_id: int = 1,
-    reduction: str = 'mean'
+    y_true: torch.Tensor, y_pred: torch.Tensor, class_id: int = 1, reduction: str = "mean"
 ) -> float:
     """
     Compute Dice coefficient for a specific class.
-    
+
     Args:
         y_true: Ground truth tensor
         y_pred: Prediction tensor
         class_id: Class ID to compute Dice for
         reduction: Reduction method
-    
+
     Returns:
         Dice score
     """
     y_true_class = (y_true == class_id).float()
     y_pred_class = (y_pred == class_id).float()
-    
+
     intersection = torch.sum(y_true_class * y_pred_class)
     union = torch.sum(y_true_class) + torch.sum(y_pred_class)
-    
+
     dice = (2.0 * intersection + 1e-7) / (union + 1e-7)
-    
+
     return dice.item()
 
 
@@ -192,7 +262,7 @@ def compute_iou_imagewise_from_cumulator(
     TNs: List[torch.Tensor],
     exclude_empty: bool = False,
     exclude_empty_only_gt: bool = False,
-    return_std: bool = False
+    return_std: bool = False,
 ):
     """Compute image-wise IoU from accumulated metrics."""
     # Concatenate tensors for each metric
@@ -206,16 +276,26 @@ def compute_iou_imagewise_from_cumulator(
         fp = FPs
         fn = FNs
         tn = TNs
-    
 
     if return_std:
 
-        mean_iou, std_iou = compute_iou_from_metrics(tp, fp, tn, fn, reduction='micro-imagewise',exclude_empty=exclude_empty, exclude_empty_only_gt =exclude_empty_only_gt, return_std=return_std)
+        mean_iou, std_iou = compute_iou_from_metrics(
+            tp,
+            fp,
+            tn,
+            fn,
+            reduction="micro-imagewise",
+            exclude_empty=exclude_empty,
+            exclude_empty_only_gt=exclude_empty_only_gt,
+            return_std=return_std,
+        )
         return mean_iou.item(), std_iou.item()
 
     else:
 
-        return compute_iou_from_metrics(tp, fp, tn, fn, reduction='micro-imagewise',exclude_empty=exclude_empty).item()
+        return compute_iou_from_metrics(
+            tp, fp, tn, fn, reduction="micro-imagewise", exclude_empty=exclude_empty
+        ).item()
 
 
 def compute_dice_imagewise_from_cumulator(
@@ -225,7 +305,7 @@ def compute_dice_imagewise_from_cumulator(
     TNs: List[torch.Tensor],
     exclude_empty: bool = False,
     exclude_empty_only_gt: bool = False,
-    return_std: bool = False
+    return_std: bool = False,
 ):
     """Compute image-wise Dice from accumulated metrics."""
     # Concatenate tensors for each metric
@@ -239,15 +319,25 @@ def compute_dice_imagewise_from_cumulator(
         fp = FPs
         fn = FNs
         tn = TNs
-    
-    
+
     if return_std:
-        mean_dice, std_dice =  compute_dice_from_metrics(tp, fp, tn, fn, reduction='micro-imagewise',exclude_empty=exclude_empty, exclude_empty_only_gt=exclude_empty_only_gt, return_std=return_std)
+        mean_dice, std_dice = compute_dice_from_metrics(
+            tp,
+            fp,
+            tn,
+            fn,
+            reduction="micro-imagewise",
+            exclude_empty=exclude_empty,
+            exclude_empty_only_gt=exclude_empty_only_gt,
+            return_std=return_std,
+        )
         return mean_dice.item(), std_dice.item()
 
     else:
 
-        return compute_dice_from_metrics(tp, fp, tn, fn, reduction='micro-imagewise',exclude_empty=exclude_empty).item()
+        return compute_dice_from_metrics(
+            tp, fp, tn, fn, reduction="micro-imagewise", exclude_empty=exclude_empty
+        ).item()
 
 
 def compute_mean_iou_imagewise_from_cumulator(
@@ -257,7 +347,7 @@ def compute_mean_iou_imagewise_from_cumulator(
     TNs: List[torch.Tensor],
     exclude_empty: bool = False,
     return_std: bool = False,
-    reduce_mean: bool = True
+    reduce_mean: bool = True,
 ):
     """Compute mean IoU across classes from accumulated metrics."""
     # Concatenate tensors for each metric
@@ -274,13 +364,19 @@ def compute_mean_iou_imagewise_from_cumulator(
 
     if exclude_empty:
         # Calculate IOU per image excluding empty cases
-        iou1_per_image_no_empty = compute_iou_from_metrics(tp, fp, tn, fn, reduction='none', exclude_empty=True)
-        iou0_per_image_no_empty = compute_iou_from_metrics(tn, fn, tp, fp, reduction='none', exclude_empty=True)
-        
+        iou1_per_image_no_empty = compute_iou_from_metrics(
+            tp, fp, tn, fn, reduction="none", exclude_empty=True
+        )
+        iou0_per_image_no_empty = compute_iou_from_metrics(
+            tn, fn, tp, fp, reduction="none", exclude_empty=True
+        )
+
         # Combine and filter valid IOU scores
-        combined_iou_scores = np.hstack((iou0_per_image_no_empty.cpu().numpy(), iou1_per_image_no_empty.cpu().numpy()))
+        combined_iou_scores = np.hstack(
+            (iou0_per_image_no_empty.cpu().numpy(), iou1_per_image_no_empty.cpu().numpy())
+        )
         valid_pairs = ~np.isnan(combined_iou_scores).any(axis=1)
-        
+
         # Compute mean and optionally standard deviation
         mean_iou_per_image_no_empty = np.nanmean(combined_iou_scores[valid_pairs], axis=1)
 
@@ -294,13 +390,13 @@ def compute_mean_iou_imagewise_from_cumulator(
 
     else:
         # Calculate IOU per image including empty cases
-        iou1_per_image = compute_iou_from_metrics(tp, fp, tn, fn, reduction='none')
-        iou0_per_image = compute_iou_from_metrics(tn, fn, tp, fp, reduction='none')
-        
+        iou1_per_image = compute_iou_from_metrics(tp, fp, tn, fn, reduction="none")
+        iou0_per_image = compute_iou_from_metrics(tn, fn, tp, fp, reduction="none")
+
         # Compute mean and optionally standard deviation
         combined_iou_scores = np.array([iou0_per_image.cpu().numpy(), iou1_per_image.cpu().numpy()])
         mean_iou_per_image = np.nanmean(combined_iou_scores, axis=0)
-        
+
         if not reduce_mean:
             return mean_iou_per_image
         if return_std:
@@ -317,7 +413,7 @@ def compute_mean_dice_imagewise_from_cumulator(
     TNs: List[torch.Tensor],
     exclude_empty: bool = False,
     return_std: bool = False,
-    reduce_mean: bool = True
+    reduce_mean: bool = True,
 ):
     """Compute mean Dice across classes from accumulated metrics."""
     # Concatenate tensors for each metric
@@ -334,13 +430,19 @@ def compute_mean_dice_imagewise_from_cumulator(
 
     if exclude_empty:
         # Calculate Dice per image excluding empty cases
-        dice1_per_image_no_empty = compute_dice_from_metrics(tp, fp, tn, fn, reduction='none', exclude_empty=True)
-        dice0_per_image_no_empty = compute_dice_from_metrics(tn, fn, tp, fp, reduction='none', exclude_empty=True)
-        
+        dice1_per_image_no_empty = compute_dice_from_metrics(
+            tp, fp, tn, fn, reduction="none", exclude_empty=True
+        )
+        dice0_per_image_no_empty = compute_dice_from_metrics(
+            tn, fn, tp, fp, reduction="none", exclude_empty=True
+        )
+
         # Combine and filter valid Dice scores
-        combined_dice_scores = np.hstack((dice0_per_image_no_empty.cpu().numpy(), dice1_per_image_no_empty.cpu().numpy()))
+        combined_dice_scores = np.hstack(
+            (dice0_per_image_no_empty.cpu().numpy(), dice1_per_image_no_empty.cpu().numpy())
+        )
         valid_pairs = ~np.isnan(combined_dice_scores).any(axis=1)
-        
+
         # Compute mean and optionally standard deviation
         mean_dice_per_image_no_empty = np.nanmean(combined_dice_scores[valid_pairs], axis=1)
 
@@ -354,13 +456,15 @@ def compute_mean_dice_imagewise_from_cumulator(
 
     else:
         # Calculate Dice per image including empty cases
-        dice1_per_image = compute_dice_from_metrics(tp, fp, tn, fn, reduction='none')
-        dice0_per_image = compute_dice_from_metrics(tn, fn, tp, fp, reduction='none')
-        
+        dice1_per_image = compute_dice_from_metrics(tp, fp, tn, fn, reduction="none")
+        dice0_per_image = compute_dice_from_metrics(tn, fn, tp, fp, reduction="none")
+
         # Compute mean and optionally standard deviation
-        combined_dice_scores = np.array([dice0_per_image.cpu().numpy(), dice1_per_image.cpu().numpy()])
+        combined_dice_scores = np.array(
+            [dice0_per_image.cpu().numpy(), dice1_per_image.cpu().numpy()]
+        )
         mean_dice_per_image = np.nanmean(combined_dice_scores, axis=0)
-        
+
         if not reduce_mean:
             return mean_dice_per_image
         if return_std:
@@ -374,35 +478,35 @@ def compute_volumetric_iou(
     gt_volume: torch.Tensor,
     pred_volume: torch.Tensor,
     num_classes: int = 2,
-    exclude_empty: bool = False
+    exclude_empty: bool = False,
 ) -> List[float]:
     """
     Compute volumetric IoU for each class.
-    
+
     Args:
         gt_volume: Ground truth volume
         pred_volume: Predicted volume
         num_classes: Number of classes
         exclude_empty: Whether to exclude empty volumes
-    
+
     Returns:
         List of IoU scores for each class
     """
     ious = []
-    
+
     for class_id in range(num_classes):
         gt_class = (gt_volume == class_id).float()
         pred_class = (pred_volume == class_id).float()
-        
+
         intersection = torch.sum(gt_class * pred_class)
         union = torch.sum(gt_class) + torch.sum(pred_class) - intersection
-        
+
         if exclude_empty and union == 0:
             continue
-            
+
         iou = (intersection / (union + 1e-7)).item()
         ious.append(iou)
-    
+
     return ious
 
 
@@ -410,24 +514,26 @@ def compute_dice_score(
     y_true: torch.Tensor,
     y_pred: torch.Tensor,
     class_id: int = 1,
-    reduction: str = 'micro',
-    exclude_empty: bool = False
+    reduction: str = "micro",
+    exclude_empty: bool = False,
 ) -> float:
     """
     Compute Dice score for a specific class.
-    
+
     Args:
         y_true: Ground truth tensor
         y_pred: Prediction tensor
         class_id: Class ID to compute Dice for
         reduction: Reduction method ('micro', 'micro_image_wise')
         exclude_empty: Whether to exclude empty masks
-    
+
     Returns:
         Dice score
     """
-    
-    def compute_dice_score_single(y_true_single, y_pred_single, class_id_single, exclude_empty=False):
+
+    def compute_dice_score_single(
+        y_true_single, y_pred_single, class_id_single, exclude_empty=False
+    ):
         y_true_class = (y_true_single == class_id_single).float()
         y_pred_class = (y_pred_single == class_id_single).float()
 
@@ -436,22 +542,30 @@ def compute_dice_score(
 
         if union == 0:
             if exclude_empty:
-                dice_score = torch.tensor(float('nan'))
+                dice_score = torch.tensor(float("nan"))
             else:
                 dice_score = torch.tensor(1.0)
         else:
-            dice_score = (2. * intersection) / (union)
-        
+            dice_score = (2.0 * intersection) / (union)
+
         return dice_score
 
-    if reduction == 'micro':
+    if reduction == "micro":
         y_true_flat = y_true.view(-1)
         y_pred_flat = y_pred.view(-1)
-        dice_score = torch.tensor(compute_dice_score_single(y_true_flat, y_pred_flat, class_id, exclude_empty)).float()
+        dice_score = torch.tensor(
+            compute_dice_score_single(y_true_flat, y_pred_flat, class_id, exclude_empty)
+        ).float()
         return dice_score
 
-    elif reduction == 'micro_image_wise':
-        dice_scores = torch.tensor([compute_dice_score_single(y, p, class_id, exclude_empty) for y, p in zip(y_true, y_pred)], dtype=torch.float32)
+    elif reduction == "micro_image_wise":
+        dice_scores = torch.tensor(
+            [
+                compute_dice_score_single(y, p, class_id, exclude_empty)
+                for y, p in zip(y_true, y_pred)
+            ],
+            dtype=torch.float32,
+        )
         return torch.nanmean(dice_scores)
 
     else:
@@ -514,23 +628,23 @@ def compute_mean_recall(tp, fp, fn, tn):
     return mean_recall
 
 
-def compute_dice_score_from_cm(tp, fp, fn, tn, reduction='micro', exclude_empty=False):
+def compute_dice_score_from_cm(tp, fp, fn, tn, reduction="micro", exclude_empty=False):
     # Convert to float for division
     tp = tp.float()
     fp = fp.float()
     fn = fn.float()
-    
-    if reduction == 'micro':
+
+    if reduction == "micro":
         # Sum across all classes and samples for micro averaging
         tp_sum = tp.sum()
         fp_sum = fp.sum()
         fn_sum = fn.sum()
-        
+
         # Compute Dice score, handling division by zero
         denominator = 2 * tp_sum + fp_sum + fn_sum
         dice_score = 2 * tp_sum / denominator if denominator != 0 else torch.tensor(1.0)
-        
-    elif reduction == 'micro-imagewise':
+
+    elif reduction == "micro-imagewise":
         # Compute Dice Score per sample, then average across samples
         denominator = 2 * tp + fp + fn
         valid = denominator != 0
@@ -538,19 +652,21 @@ def compute_dice_score_from_cm(tp, fp, fn, tn, reduction='micro', exclude_empty=
         dice_scores[valid] = 2 * tp[valid] / denominator[valid]
 
         if exclude_empty:
-            dice_scores[~valid] = torch.tensor(float('nan'))
+            dice_scores[~valid] = torch.tensor(float("nan"))
             dice_score = dice_scores.nanmean(dim=0)
         else:
             dice_scores[~valid] = torch.tensor(1.0)
             dice_score = dice_scores.mean(dim=0)
-        
+
     else:
         raise ValueError("Reduction method must be either 'micro' or 'micro-imagewise'")
-    
+
     return dice_score
 
 
-def class_specific_accuracy_score(preds, targets, class_id=1, eps=1e-7, reduction='mean', averaging='micro'):
+def class_specific_accuracy_score(
+    preds, targets, class_id=1, eps=1e-7, reduction="mean", averaging="micro"
+):
     """
     Compute the class-specific accuracy score.
 
@@ -591,12 +707,12 @@ def class_specific_accuracy_score(preds, targets, class_id=1, eps=1e-7, reductio
         FP = ((1 - preds) * targets).sum(dim=(1, 2, 3))
         FN = (preds * (1 - targets)).sum(dim=(1, 2, 3))
 
-    if averaging == 'micro':
+    if averaging == "micro":
         if class_id == 1:
             accuracy = TP.sum() / (TP.sum() + FP.sum() + FN.sum() + eps)
         else:
             accuracy = TN.sum() / (TN.sum() + FP.sum() + FN.sum() + eps)
-    elif averaging == 'micro_image_wise':
+    elif averaging == "micro_image_wise":
         if class_id == 1:
             accuracy = torch.mean(TP / (TP + FP + FN + eps))
         else:

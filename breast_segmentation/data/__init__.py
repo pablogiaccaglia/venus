@@ -12,12 +12,11 @@ from .collate_functions import (
 )
 
 __all__ = [
-    'get_image_label_files',
-    'create_data_dicts', 
-    'PairedDataset',
-    'PairedDataLoader',
+    "get_image_label_files",
+    "create_data_dicts",
+    "PairedDataset",
+    "PairedDataLoader",
     # Collate functions
-    'custom_collate',
-    'custom_collate_no_patches',
-
+    "custom_collate",
+    "custom_collate_no_patches",
 ]

@@ -34,6 +34,7 @@ wandb = "^0.21.3"
 medpy = "^0.5.2"
 torch = {version = "^2.5.1", source = "pytorch-cu121"}
 torchvision = {version = "^0.20.1", source = "pytorch-cu121"}
+black = "^25.1.0"
 
 [[tool.poetry.source]]
 name = "pytorch-cu121"

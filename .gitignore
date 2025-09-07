@@ -6,12 +6,12 @@ Dataset-arrays-FINAL/
 lightning_logs/
 
 # Specific  files
-training_monai-bradm (2) (1) (1) (1) (1).ipynb
+training_monai-BREADM (2) (1) (1) (1) (1).ipynb
 training_monai-private-DECEMBER2024 (2) (1).ipynb
 training_monai-private-DECEMBER2024-baselines (1).ipynb
-training_monai-bradm-DECEMBER-2024-baselines (1) (1) (1) (2) (1).ipynb
+training_monai-BREADM-DECEMBER-2024-baselines (1) (1) (1) (2) (1).ipynb
 inference-merge-final-DECEMBER2024 (1) 2.ipynb
-BRADM-INFERENCE-ID-AWARE-rebuttal-p2.ipynb
+BREADM-INFERENCE-ID-AWARE-rebuttal-p2.ipynb
 utiils.py
 
 download/download-private-dataset.ipynb
