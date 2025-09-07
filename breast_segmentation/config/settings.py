@@ -16,32 +16,27 @@ class Config:
     TEST_RATIO: float = 0.2  # 1 - TRAIN_RATIO
 
     # Training settings
-    BATCH_SIZE: int = 24
-    NUM_WORKERS: int = min(os.cpu_count() or 4, 4)  # Limit workers to avoid memory issues
+    BATCH_SIZE: int = 32
+    NUM_WORKERS: int = os.cpu_count()
 
     # Paths
-    CHECKPOINTS_DIR: str = "checkpoints"
-    checkpoints_dir: str = "checkpoints"  # For compatibility
-    DATASET_BASE_PATH: str = "BreaDM/seg"
-    PRIVATE_DATASET_BASE_PATH: str = "Dataset-arrays-4-FINAL"
+    checkpoints_dir_breadm: str = "./checkpoints/breadm-dataset"
+    checkpoints_dir_private: str = "./checkpoints/private-dataset"
 
-    # GPU settings
-    CUDA_LAUNCH_BLOCKING: str = "1"
-    TORCH_USE_CUDA_DSA: str = "1"
-    CUBLAS_WORKSPACE_CONFIG: str = ":4096:8"
+    DATASET_BASE_PATH_BREADM: str = "BreaDM/seg"
+    DATASET_BASE_PATH_PRIVATE: str = "Dataset-arrays-4-FINAL"
 
-    #
-
-    # Model settings
-    LEARNING_RATE: float = 1e-4
-    MAX_EPOCHS: int = 100
+    MAX_EPOCHS: int = 1000
+    EARLY_STOPPING_PATIENCE: int = 10
+    GRADIENT_CLIP_VAL: int = 1
+    LOG_EVERY_N_STEPS: int = 10
 
     # Image settings
     IMAGE_SIZE: tuple = (256, 256)
     IN_CHANNELS: int = 1
-    OUT_CHANNELS: int = 2  # Binary segmentation
+    OUT_CHANNELS: int = 1  
 
-    # Preprocessing parameters (BREADM dataset defaults)
+    # Preprocessing parameters (BREADM dataset)
     MEDIAN_SMOOTH_RADIUS: int = 2
     HIST_NORM_NUM_BINS: int = 40
     RM_THORAX_THRESHOLD: float = 80
@@ -70,6 +65,11 @@ class Config:
     START_POS_PATCHES: int = 75
     MEAN_THRESHOLD_NO_PATCHES: float = 35
     START_POS_NO_PATCHES: int = 40
+
+    # Environment variables for deterministic behavior
+    CUDA_LAUNCH_BLOCKING: str = "1"
+    TORCH_USE_CUDA_DSA: str = "1"
+    CUBLAS_WORKSPACE_CONFIG: str = ":4096:8"
 
     def __init__(self):
         """Initialize configuration and set environment variables."""

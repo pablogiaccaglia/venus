@@ -749,13 +749,15 @@ def test_dataset_aware_ensemble(
     subtracted: bool = True,
     base_channels: int = 64,
     strict: bool = True,
+    use_decoder_attention: bool = True,
+    use_simple_fusion: bool = False,
 ) -> Dict:
     """
     Test ensemble model with dataset-aware metric computation.
     """
     # Load models
     model_whole = BreastFusionModel.load_from_checkpoint(
-        model_whole_path, strict=strict, base_channels=base_channels
+        model_whole_path, strict=strict, base_channels=base_channels, use_decoder_attention=use_decoder_attention, use_simple_fusion=use_simple_fusion
     )
     model_patches = BreastSegmentationModel.load_from_checkpoint(model_patches_path, strict=strict)
 

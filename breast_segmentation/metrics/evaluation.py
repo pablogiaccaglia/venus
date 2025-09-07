@@ -553,19 +553,15 @@ def compute_dice_score(
     if reduction == "micro":
         y_true_flat = y_true.view(-1)
         y_pred_flat = y_pred.view(-1)
-        dice_score = torch.tensor(
-            compute_dice_score_single(y_true_flat, y_pred_flat, class_id, exclude_empty)
-        ).float()
-        return dice_score
+        dice_score = compute_dice_score_single(y_true_flat, y_pred_flat, class_id, exclude_empty)
+        return dice_score.float()
 
     elif reduction == "micro_image_wise":
-        dice_scores = torch.tensor(
-            [
-                compute_dice_score_single(y, p, class_id, exclude_empty)
-                for y, p in zip(y_true, y_pred)
-            ],
-            dtype=torch.float32,
-        )
+        dice_scores = [
+            compute_dice_score_single(y, p, class_id, exclude_empty)
+            for y, p in zip(y_true, y_pred)
+        ]
+        dice_scores = torch.stack([ds.to(torch.float32) for ds in dice_scores])
         return torch.nanmean(dice_scores)
 
     else:
