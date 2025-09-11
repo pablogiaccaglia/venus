@@ -6,6 +6,32 @@ This repository implements VENUS, a multiscale attention-based deep learning met
 
 ![Image](media/arch.jpg)
 
+## Structure of the repo
+
+```
+venus/                               # Project root
+├── breast_segmentation/             # Backend functions & architectures (including VENUS)
+├── run-scripts/                     # Command-line training and testing scripts
+│   ├── train/                       # Training scripts
+│   │   ├── train_baselines_breadm.py
+│   │   ├── train_baselines_private.py
+│   │   ├── train_venus_breadm.py
+│   │   └── train_venus_private.py
+│   └── test/                        # Inference/testing scripts
+│       ├── inference_dataset_aware_breadm.py
+│       └── inference_dataset_aware_private.py
+├── run-notebooks/                   # Jupyter notebook counterparts
+│   ├── train/                       # Training notebooks
+│   └── test/                        # Testing notebooks
+├── checkpoints/                     # Model checkpoints
+│   ├── breadm-dataset/
+│   └── private-dataset/
+├── download/                        # Dataset download utilities
+├── BreaDM/                          # BreaDM dataset (gitignored)
+│   └── seg/                         # Segmentation data
+└── Dataset-arrays-4-FINAL/         # Private dataset (gitignored)
+```
+
 
 ## Data Preparation
 
@@ -36,32 +62,6 @@ Modes and configuration:
 - Modes: `train`, `test`, and `statistics` select the appropriate sub-pipeline (e.g., statistics disables augmentation).
 - Dataset-aware behavior: parameters (e.g., thresholds, margins, histogram bins) differ for BreaDM vs. private datasets and are selected internally.
 - Main params in [`breast_segmentation/config/settings.py`](breast_segmentation/config/settings.py): histogram bins, thorax/bottom thresholds and margins, black-threshold/tolerance for trimming, target sizes, bounding-box size, pad size, and normalization constants.
-
-### Structure of Data Folder
-
-```
-venus/                               # Project root
-├── breast_segmentation/             # Backend functions & architectures (including VENUS)
-├── run-scripts/                     # Command-line training and testing scripts
-│   ├── train/                       # Training scripts
-│   │   ├── train_baselines_breadm.py
-│   │   ├── train_baselines_private.py
-│   │   ├── train_venus_breadm.py
-│   │   └── train_venus_private.py
-│   └── test/                        # Inference/testing scripts
-│       ├── inference_dataset_aware_breadm.py
-│       └── inference_dataset_aware_private.py
-├── run-notebooks/                   # Jupyter notebook counterparts
-│   ├── train/                       # Training notebooks
-│   └── test/                        # Testing notebooks
-├── checkpoints/                     # Model checkpoints
-│   ├── breadm-dataset/
-│   └── private-dataset/
-├── download/                        # Dataset download utilities
-├── BreaDM/                          # BreaDM dataset (gitignored)
-│   └── seg/                         # Segmentation data
-└── Dataset-arrays-4-FINAL/         # Private dataset (gitignored)
-```
 
 ## Implementation
 
