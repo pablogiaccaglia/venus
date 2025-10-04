@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This repository implements VENUS, a multiscale attention-based deep learning method for DCE-MRI breast tumor segmentation. It include training and inference pipelines for baseline models and the proposed VENUS model on both a proprietary dataset and the public BreaDM dataset. For methodological details, see our ICIP 2025 paper: https://ieeexplore.ieee.org/document/11084484.
+This repository implements VENUS, a multiscale attention-based deep learning method for DCE-MRI breast tumor segmentation. It include training and inference pipelines for baseline models and the proposed VENUS model on both a proprietary dataset and the public BreastDM dataset. For methodological details, see our [ICIP 2025](https://ieeexplore.ieee.org/document/11084484) paper.
 
 ![Image](media/arch.jpg)
 
@@ -27,7 +27,7 @@ venus/                               # Project root
 │   ├── breadm-dataset/
 │   └── private-dataset/
 ├── download/                        # Dataset download utilities
-├── BreaDM/                          # BreaDM dataset (gitignored)
+├── BreaDM/                          # BreastDM dataset (gitignored)
 │   └── seg/                         # Segmentation data
 └── Dataset-arrays-4-FINAL/         # Private dataset (gitignored)
 ```
@@ -38,11 +38,11 @@ venus/                               # Project root
 ### Datasets
 
 - Primary (proprietary) dataset: 103 patients, each with one pre-contrast and three post-contrast 3D T1 DCE-MRI volumes. Acquired on 1.5T Siemens and 3T GE scanners, totaling ~76.8k 2D breast slices (∼19.2k per sequence type). Each slice is annotated with semi-automatic segmentations of mass (circumscribed) and non-mass (infiltrating and diffusing) tumors. Annotations were mostly performed by a radiologist with six years of mammographic experience, with the remainder by two radiology residents (one and two years of experience). This dataset is not publicly shareable; the protocol was approved by the Ethics Committee of Sapienza University of Rome.
-- Public dataset (BreaDM): 232 patients, each with one pre-contrast and eight post-contrast volumes, with manually annotated mass breast cancer segmentations by experienced radiologists. The dataset comprises ~29.2k 2D slices (∼3.2k per sequence type) from a single 3T scanner. Reference: https://www.sciencedirect.com/science/article/pii/S0010482523007205
+- Public dataset ([BreastDM](https://www.sciencedirect.com/science/article/pii/S0010482523007205)): 232 patients, each with one pre-contrast and eight post-contrast volumes, with manually annotated mass breast cancer segmentations by experienced radiologists. The dataset comprises ~29.2k 2D slices (∼3.2k per sequence type) from a single 3T scanner.
 
 ### Data Preprocessing
 
-The preprocessing pipeline is implemented in [`breast_segmentation/transforms/`](breast_segmentation/transforms/) and orchestrated by the `Preprocess` class. It is used for both the public BreaDM and the private datasets and is fully parameterized via [`breast_segmentation/config/settings.py`](breast_segmentation/config/settings.py).
+The preprocessing pipeline is implemented in [`breast_segmentation/transforms/`](breast_segmentation/transforms/) and orchestrated by the `Preprocess` class. It is used for both the public BreastDM and the private datasets and is fully parameterized via [`breast_segmentation/config/settings.py`](breast_segmentation/config/settings.py).
 
 What it does (high level):
 - Focuses the field-of-view on breast tissue by removing irrelevant regions (thorax/top and bottom), trimming black borders, and cropping to the informative area.
@@ -60,7 +60,7 @@ How it works (key steps):
 
 Modes and configuration:
 - Modes: `train`, `test`, and `statistics` select the appropriate sub-pipeline (e.g., statistics disables augmentation).
-- Dataset-aware behavior: parameters (e.g., thresholds, margins, histogram bins) differ for BreaDM vs. private datasets and are selected internally.
+- Dataset-aware behavior: parameters (e.g., thresholds, margins, histogram bins) differ for BreastDM vs. private datasets and are selected internally.
 - Main params in [`breast_segmentation/config/settings.py`](breast_segmentation/config/settings.py): histogram bins, thorax/bottom thresholds and margins, black-threshold/tolerance for trimming, target sizes, bounding-box size, pad size, and normalization constants.
 
 ## Implementation
@@ -96,7 +96,7 @@ All model parameters, hyperparameters, dataset paths, and training configuration
 
 #### Command Line Scripts
 
-Train baseline models on BreaDM dataset:
+Train baseline models on BreastDM dataset:
 ```bash
 poetry run python run-scripts/train/train_baselines_breadm.py
 ```
@@ -106,7 +106,7 @@ Train baseline models on private dataset:
 poetry run python run-scripts/train/train_baselines_private.py
 ```
 
-Train VENUS model on BreaDM dataset:
+Train VENUS model on BreastDM dataset:
 ```bash
 poetry run python run-scripts/train/train_venus_breadm.py
 ```
@@ -129,7 +129,7 @@ For detailed pipeline visualization and step-by-step execution, use the correspo
 
 #### Command Line Scripts
 
-Run inference on BreaDM dataset:
+Run inference on BreastDM dataset:
 ```bash
 poetry run python run-scripts/test/inference_dataset_aware_breadm.py
 ```
@@ -158,18 +158,18 @@ Model weights are available in the [`checkpoints/`](checkpoints/) directory:
 If you find this repository useful, please cite our paper:
 
 ```
-@INPROCEEDINGS{11084484,
-  author={Giaccaglia, Pablo and Poles, Isabella and Lidoni, Valentina and Rizzo, Veronica and Gentili, Michele and Pediconi, Federica and Santambrogio, Marco D. and D’Arnese, Eleonora},
-  booktitle={2025 IEEE International Conference on Image Processing (ICIP)}, 
-  title={A Multiscale Attention-Based Deep Learning Method for DCE-MRI Breast Tumor Segmentation}, 
+@inproceedings{giaccaglia2025multiscale,
+  title={A Multiscale Attention-Based Deep Learning Method for DCE-MRI Breast Tumor Segmentation},
+  author={Giaccaglia, Pablo and Poles, Isabella and Lidoni, Valentina and Rizzo, Veronica and Gentili, Michele and Pediconi, Federica and Santambrogio, Marco D and D’Arnese, Eleonora},
+  booktitle={2025 IEEE International Conference on Image Processing (ICIP)},
+  pages={1906--1911},
   year={2025},
-  pages={1906-1911},
-  keywords={Deep learning;Image segmentation;Accuracy;Breast tumors;Semantics;Venus;Morphology;Breast cancer;Decoding;Image reconstruction;Breast Cancer;DCE-MRI;Deep Learning;Image segmentation},
-  doi={10.1109/ICIP55913.2025.11084484}}
+  organization={IEEE}
+}
 ```
 
 ## Acknowledgments
-We acknowledge the authors of the BreaDM dataset used in this study ([BreaDM dataset](https://www.sciencedirect.com/science/article/pii/S0010482523007205)).
+We acknowledge the authors of the BreastDM dataset used in this study ([BreastDM dataset](https://www.sciencedirect.com/science/article/pii/S0010482523007205)).
 
 ## Contact
 
