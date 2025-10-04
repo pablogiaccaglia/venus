@@ -1,4 +1,4 @@
-# VENUS: Breast Segmentation Framework
+# VENUS: A Multiscale Attention-Based Deep Learning Method for DCE-MRI Breast Tumor Segmentation
 
 ## Introduction
 
